@@ -1,8 +1,6 @@
 package edu.nyit.socket;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
@@ -10,17 +8,34 @@ import javax.swing.JTextArea;
 
 import edu.nyit.socket.ClientGUI.Logger;
 
+/**
+ * @author Bowen Song 
+ * ID: 1035197 
+ * CSCI 690
+ */
 public class Client implements Runnable
 {
 	private String ipAddress;
-	private BufferedReader in;
+	private int port;
+	private Socket s;
 	private PrintWriter out;
 	private JTextArea area;
 	private Logger l = Logger.getInstance();
 
-	public Client(String ipAddress, JTextArea area)
+	/**
+	 * Message sending client
+	 * 
+	 * @param ipAddress
+	 *            IP Address
+	 * @param port
+	 *            Port number
+	 * @param area
+	 *            Chat message area
+	 */
+	public Client(String ipAddress, int port, JTextArea area)
 	{
 		this.ipAddress = ipAddress;
+		this.port = port;
 		this.area = area;
 	}
 
@@ -29,9 +44,9 @@ public class Client implements Runnable
 	{
 		try
 		{
-			l.print("Client connecting to " + ipAddress + "...");
-			Socket s = new Socket(ipAddress, 9090);
-			in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+			l.print("Client connect to " + ipAddress + ":" + port + "...");
+			s = new Socket(ipAddress, 9090);
+			l.print(s.toString());
 			out = new PrintWriter(s.getOutputStream(), true);
 		}
 		catch (IOException e)
@@ -40,6 +55,12 @@ public class Client implements Runnable
 		}
 	}
 
+	/**
+	 * Send a message to other client
+	 * 
+	 * @param input
+	 *            Message to be sent
+	 */
 	public void send(String input)
 	{
 		out.println(input);

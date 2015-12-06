@@ -3,28 +3,35 @@ package edu.nyit.socket;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+/**
+ * @author Bowen Song 
+ * ID: 1035197 
+ * CSCI 690
+ */
 public class ClientGUI extends JFrame
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private JSplitPane splitPane;
 	private JPanel mainPanel;
 	private JPanel topPanel;
+	private JLabel ipLabel;
 	private JTextField ipTextFiled;
-	private JButton ipApplyButton;
+	private JButton connectButton;
 	private JTextArea mainTextArea;
 	private JPanel bottomPanel;
 	private JTextField inputField;
@@ -32,32 +39,39 @@ public class ClientGUI extends JFrame
 
 	private static JTextArea console;
 
-	private GetIPHandler getIPHandler;
+	private ConnectHandler getIPHandler;
 	private SendMsgHandler sendMsgHandler;
 
 	private String ipAddress;
+	private int port;
 
 	private Client c;
 	private Logger l = Logger.getInstance();
 
 	public static void main(String[] args)
 	{
-		ClientGUI cg = new ClientGUI();
-		// cg.setVisible(true);
+		new ClientGUI();
 	}
 
 	public ClientGUI()
 	{
+		String p = JOptionPane.showInputDialog("Enter port:");
+		port = Integer.parseInt(p);
 		layoutGUI();
-		initData();
+		startServer(port);
 	}
 
-	public void initData()
+	/**
+	 * Start listening server on specified port
+	 * 
+	 * @param port
+	 */
+	public void startServer(int port)
 	{
 		ServerSocket listener = null;
 		try
 		{
-			listener = new ServerSocket(9090);
+			listener = new ServerSocket(port);
 			Server s = new Server(listener.accept(), mainTextArea);
 			Thread t = new Thread(s);
 			t.start();
@@ -79,18 +93,23 @@ public class ClientGUI extends JFrame
 		}
 	}
 
+	/**
+	 * Layout GUI component
+	 */
 	public void layoutGUI()
 	{
+		ipLabel = new JLabel("IP:");
 		ipTextFiled = new JTextField(10);
-		ipApplyButton = new JButton("Connect");
+		connectButton = new JButton("Connect");
 		mainTextArea = new JTextArea();
 		mainTextArea.setEditable(false);
 		inputField = new JTextField(10);
 		sendButton = new JButton("Send");
 
 		topPanel = new JPanel();
+		topPanel.add(ipLabel);
 		topPanel.add(ipTextFiled);
-		topPanel.add(ipApplyButton);
+		topPanel.add(connectButton);
 
 		bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BorderLayout());
@@ -109,8 +128,8 @@ public class ClientGUI extends JFrame
 
 		this.add(splitPane);
 
-		getIPHandler = new GetIPHandler();
-		ipApplyButton.addActionListener(getIPHandler);
+		getIPHandler = new ConnectHandler();
+		connectButton.addActionListener(getIPHandler);
 
 		sendMsgHandler = new SendMsgHandler();
 		sendButton.addActionListener(sendMsgHandler);
@@ -121,19 +140,27 @@ public class ClientGUI extends JFrame
 		this.setVisible(true);
 	}
 
-	private void initConnection(String ip)
+	/**
+	 * Start a connection to another client
+	 * 
+	 * @param ip
+	 *            IP Address
+	 * @param port
+	 */
+	private void initConnection(String ip, int port)
 	{
-		c = new Client(ip, mainTextArea);
+		c = new Client(ip, port, mainTextArea);
 		Thread t = new Thread(c);
 		t.start();
 	}
 
-	class GetIPHandler implements ActionListener
+	class ConnectHandler implements ActionListener
 	{
 		@Override
 		public void actionPerformed(ActionEvent e)
 		{
-			initConnection(ipTextFiled.getText());
+			ipAddress = ipTextFiled.getText();
+			initConnection(ipAddress, port);
 		}
 	}
 
@@ -143,11 +170,6 @@ public class ClientGUI extends JFrame
 		public void actionPerformed(ActionEvent e)
 		{
 			c.send(inputField.getText());
-			/*
-			 * String response; try { response = in.readLine(); if (response ==
-			 * null || response.equals("")) { System.exit(0); } } catch
-			 * (IOException ex) { response = "Error: " + ex; }
-			 */
 			mainTextArea.selectAll();
 			inputField.setText("");
 		}
@@ -157,8 +179,10 @@ public class ClientGUI extends JFrame
 	{
 		private static Logger instance = null;
 
-		protected Logger()
-		{}
+		/**
+		 * Singleton helper class for printing messages to console
+		 */
+		protected Logger(){}
 
 		public static Logger getInstance()
 		{
